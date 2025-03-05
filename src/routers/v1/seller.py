@@ -1,10 +1,11 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Response, status, HTTPException
 from icecream import ic
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from sqlalchemy.exc import IntegrityError
 
 from src.configurations.database import get_async_session
 from src.models.sellers import Seller
@@ -29,7 +30,14 @@ async def create_seller(seller: IncommingSeller, session: DBSession):
     )
 
     session.add(new_seller)
-    await session.flush()
+    try:
+        await session.flush()
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A seller with this email already exists"
+        )
 
     return new_seller
 
@@ -46,6 +54,8 @@ async def get_all_sellers(session: DBSession):
 async def get_seller(seller_id: int, session: DBSession):
     res = await session.execute(select(Seller).where(Seller.id == seller_id).options(selectinload(Seller.books)))
     seller = res.scalar_one_or_none()
+    if not seller:
+        return Response(status_code=status.HTTP_404_NOT_FOUND)
     return seller
 
 
@@ -53,9 +63,10 @@ async def get_seller(seller_id: int, session: DBSession):
 async def delete_seller(seller_id: int, session: DBSession):
     delete_seller = await session.get(Seller, seller_id)
     ic(delete_seller)
-    if delete_seller:
-        await session.delete(delete_seller)
-
+    if not delete_seller:
+        return Response(status_code=status.HTTP_404_NOT_FOUND)
+    
+    await session.delete(delete_seller)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

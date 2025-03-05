@@ -68,7 +68,7 @@ async def test_get_single_seller(db_session, async_client):
         author="Prutkov", 
         title="Zri V Koren", 
         year=1850, 
-        count_pages=10, 
+        pages=10,
         seller_id=seller.id
     )
 
@@ -91,7 +91,7 @@ async def test_get_single_seller(db_session, async_client):
                 "author": "Prutkov",
                 "title": "Zri V Koren",
                 "year": 1850,
-                "count_pages": 10,
+                "pages": 10,
                 "seller_id": seller.id,
             }
         ],
@@ -178,3 +178,4 @@ async def test_create_seller_duplicate_email(db_session, async_client):
     
     response = await async_client.post("/api/v1/sellers/", json=data)
     assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json()["detail"] == "A seller with this email already exists"

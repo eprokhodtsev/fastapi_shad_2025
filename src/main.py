@@ -9,12 +9,11 @@ from icecream import ic
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    
     global_init()
     await create_db_and_tables()
     yield
-    #when closing
-    await delete_db_and_tables()
+    # Removed database deletion on shutdown to prevent data loss
+    # Database connections will be closed automatically when the app stops
 
 
 # Само приложение fastApi. именно оно запускается сервером и служит точкой входа
