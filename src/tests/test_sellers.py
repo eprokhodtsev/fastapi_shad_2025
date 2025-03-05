@@ -3,7 +3,6 @@ from fastapi import status
 from sqlalchemy import select
 
 from src.models import books, sellers
-from src.routers.v1.token import create_access_token
 
 
 @pytest.mark.asyncio
@@ -26,11 +25,13 @@ async def test_create_seller(async_client):
 
 @pytest.mark.asyncio
 async def test_get_sellers(db_session, async_client):
-
+    # Create test sellers
     seller = sellers.Seller(
         first_name="A", last_name="A", email="A@A.ru", hash_password="qazwsx"
     )
-    seller_2 = sellers.Seller(first_name="B", last_name="B", email="B@B.ru", hash_password="edcrfv")
+    seller_2 = sellers.Seller(
+        first_name="B", last_name="B", email="B@B.ru", hash_password="edcrfv"
+    )
 
     db_session.add_all([seller, seller_2])
     await db_session.flush()
@@ -51,21 +52,31 @@ async def test_get_sellers(db_session, async_client):
 
 @pytest.mark.asyncio
 async def test_get_single_seller(db_session, async_client):
+    # Create test sellers
     seller = sellers.Seller(
         first_name="A", last_name="A", email="A@A.ru", hash_password="qazwsxedc"
     )
-    seller_2 = sellers.Seller(first_name="B", last_name="B", email="B@B.ru", hash_password="edcrfv")
+    seller_2 = sellers.Seller(
+        first_name="B", last_name="B", email="B@B.ru", hash_password="edcrfv"
+    )
 
     db_session.add_all([seller, seller_2])
     await db_session.flush()
 
-    book = books.Book(author="Prutkov", title="Zri V Koren", year=1850, count_pages=10, seller_id=seller.id)
+    # Create a test book
+    book = books.Book(
+        author="Prutkov", 
+        title="Zri V Koren", 
+        year=1850, 
+        count_pages=10, 
+        seller_id=seller.id
+    )
 
     db_session.add(book)
     await db_session.flush()
 
-    token = create_access_token({"sub": seller.email})
-    response = await async_client.get(f"/api/v1/sellers/{seller.id}", headers={"Authorization": f"Bearer {token}"})
+    # Get the seller without authentication
+    response = await async_client.get(f"/api/v1/sellers/{seller.id}")
 
     assert response.status_code == status.HTTP_200_OK
 
@@ -78,7 +89,7 @@ async def test_get_single_seller(db_session, async_client):
             {
                 "id": book.id,
                 "author": "Prutkov",
-                "title": "EZri V Koren",
+                "title": "Zri V Koren",
                 "year": 1850,
                 "count_pages": 10,
                 "seller_id": seller.id,
@@ -115,15 +126,17 @@ async def test_update_seller(db_session, async_client):
     db_session.add(seller)
     await db_session.flush()
 
+    update_data = {
+        "id": seller.id,
+        "first_name": "vasya",
+        "last_name": "pupkin",
+        "email": "vp@vp.ru",
+        "password": "vp",
+    }
+
     response = await async_client.put(
         f"/api/v1/sellers/{seller.id}",
-        json={
-            "id": seller.id,
-            "first_name": "vasya",
-            "last_name": "pupkin",
-            "email": "vp@vp.ru",
-            "password": "vp",
-        },
+        json=update_data,
     )
 
     assert response.status_code == status.HTTP_200_OK
@@ -131,6 +144,37 @@ async def test_update_seller(db_session, async_client):
 
     res = await db_session.get(sellers.Seller, seller.id)
     assert res.id == seller.id
-    assert res.first_name == "vp"
-    assert res.last_name == "vp"
-    assert res.email == "vp@mvp.ru"
+    assert res.first_name == "vasya"
+    assert res.last_name == "pupkin"
+    assert res.email == "vp@vp.ru"
+
+
+# Additional tests for error cases
+
+@pytest.mark.asyncio
+async def test_get_nonexistent_seller(async_client):
+    """Test getting a seller that doesn't exist returns 404."""
+    response = await async_client.get("/api/v1/sellers/999999")
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.asyncio
+async def test_create_seller_duplicate_email(db_session, async_client):
+    """Test creating a seller with duplicate email returns 400."""
+    # First create a seller
+    seller = sellers.Seller(
+        first_name="A", last_name="A", email="duplicate@example.com", hash_password="qazwsx"
+    )
+    db_session.add(seller)
+    await db_session.flush()
+    
+    # Then try to create another with the same email
+    data = {
+        "first_name": "B", 
+        "last_name": "B", 
+        "email": "duplicate@example.com",  # Same email
+        "password": "qazwsx"
+    }
+    
+    response = await async_client.post("/api/v1/sellers/", json=data)
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
