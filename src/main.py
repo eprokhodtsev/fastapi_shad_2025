@@ -9,10 +9,12 @@ from icecream import ic
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    ic("I am here!")
+    
     global_init()
     await create_db_and_tables()
     yield
+    #when closing
+    await delete_db_and_tables()
 
 
 # Само приложение fastApi. именно оно запускается сервером и служит точкой входа

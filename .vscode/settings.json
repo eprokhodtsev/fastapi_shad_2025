@@ -1,4 +1,12 @@
 {
   "python.analysis.extraPaths": ["${workspaceFolder}"],
-  "python.defaultInterpreterPath": "/home/maxim/Projects/shad/fastapi_project/.venv/bin/python"
+  "python.defaultInterpreterPath": "/Users/egor_prokhodtsev/coding_projects/fastapi_project/fastapi_shad_2025_ep/fastapi_shad_2025/.venv/bin/python",
+  "black-formatter.args": ["--config", "pyproject.toml"],
+  "isort.importStrategy": "fromEnvironment",
+  "flake8.importStrategy": "fromEnvironment",
+  "black-formatter.importStrategy": "fromEnvironment",
+  "flake8.args": ["--config=.flake8"],
+  "python.testing.pytestArgs": ["src/tests"],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true
 }

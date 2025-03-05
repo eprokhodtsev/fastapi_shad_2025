@@ -10,6 +10,8 @@ from sqlalchemy.ext.asyncio import (
 
 from src.models.base import BaseModel
 from src.configurations.settings import settings
+from src.models.sellers import Seller
+from src.models.books import Book
 
 __all__ = ["global_init", "get_async_session", "create_db_and_tables"]
 
@@ -55,7 +57,6 @@ async def get_async_session() -> AsyncGenerator:
 
 
 async def create_db_and_tables():
-    from src.models.books import Book
 
     global __async_engine
 
@@ -67,3 +68,12 @@ async def create_db_and_tables():
     async with __async_engine.begin() as conn:
         # await conn.run_sync(BaseModel.metadata.drop_all)
         await conn.run_sync(BaseModel.metadata.create_all)
+
+async def delete_db_and_tables():
+    global __async_engine
+
+    if __async_engine is None:
+        raise ValueError({"message": "You must call global_init() before using this method."})
+
+    async with __async_engine.begin() as conn:
+        await conn.run_sync(BaseModel.metadata.drop_all)
