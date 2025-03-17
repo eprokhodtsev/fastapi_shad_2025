@@ -1,16 +1,18 @@
-from sqlalchemy import String,ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.orm import relationship
 
-from .base import BaseModel
+from src.models.base import BaseModel
 
 
 class Book(BaseModel):
-    __tablename__ = "books_table"
+    __tablename__ = "books"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    title: Mapped[str] = mapped_column(String(50), nullable=False)
-    author: Mapped[str] = mapped_column(String(100), nullable=False)
-    year: Mapped[int]
-    pages: Mapped[int]
-    seller: Mapped["Seller"] = relationship(back_populates="books", uselist=False)
-    seller_id: Mapped[int] = mapped_column(ForeignKey("sellers_table.id"))
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    author = Column(String, nullable=False)
+    year = Column(Integer, nullable=False)
+    pages = Column(Integer, nullable=False)
+    
+    # Add seller relationship
+    seller_id = Column(Integer, ForeignKey("sellers.id", ondelete="CASCADE"), nullable=False)
+    seller = relationship("Seller", back_populates="books")
